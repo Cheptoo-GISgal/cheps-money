@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Chep's Money">
+    <meta name="theme-color" content="#1a4d2e">
+    <meta name="description" content="Chep's Money - Shrewd financial stewardship guided by faith and wisdom">
+    
+    <!-- Apple Specific -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%231a4d2e;stop-opacity:1' /><stop offset='100%' style='stop-color:%232d7a4a;stop-opacity:1' /></linearGradient></defs><rect fill='url(%23grad)' width='180' height='180' rx='40'/><circle cx='45%' cy='40%' r='12' fill='%2388d6a8' opacity='0.6'/><path d='M 90 60 Q 70 80 80 110 Q 90 120 100 110 Q 110 80 90 60' fill='%2388d6a8'/><text x='50%' y='65%' font-size='60' font-weight='bold' fill='white' text-anchor='middle'>C</text></svg>">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <title>Chep's Money - Shrewd Stewardship</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body, #root {
+            width: 100%;
+            height: 100%;
+            font-family: 'Georgia', 'Garamond', serif;
+            background: linear-gradient(135deg, #0d2818 0%, #1a4d2e 50%, #0d2818 100%);
+            color: #f0f9f6;
+            overflow-x: hidden;
+        }
+        
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        input, select, button, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+            font-family: 'Georgia', serif;
+        }
+        
+        input:focus, select:focus, button:focus {
+            outline: none;
+        }
+        
+        /* African pattern background */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        .scripture-box {
+            background: linear-gradient(135deg, rgba(88,214,168,0.15) 0%, rgba(45,122,74,0.15) 100%);
+            border-left: 4px solid #58d6a8;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-style: italic;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #c8f0e8;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Scripture quotes about money management
+        const SCRIPTURES = [
+            { text: "The plans of the diligent lead to profit as surely as haste leads to poverty. - Proverbs 21:5", theme: "planning" },
+            { text: "Whoever loves money never has enough. - Ecclesiastes 5:10", theme: "contentment" },
+            { text: "For the love of money is a root of all kinds of evil. - 1 Timothy 6:10", theme: "wisdom" },
+            { text: "It is more blessed to give than to receive. - Acts 20:35", theme: "giving" },
+            { text: "No one can serve two masters. Either you will hate the one and love the other, or you will be devoted to one and despise the other. You cannot serve both God and money. - Matthew 6:24", theme: "priorities" },
+            { text: "Dishonest money dwindles away, but whoever gathers money little by little makes it grow. - Proverbs 13:11", theme: "saving" },
+            { text: "The borrower is slave to the lender. - Proverbs 22:7", theme: "debt" },
+            { text: "A generous person will prosper; whoever refreshes others will be refreshed. - Proverbs 11:25", theme: "generosity" },
+            { text: "Keep your lives free from the love of money and be content with what you have. - Hebrews 13:5", theme: "contentment" },
+            { text: "She considers a field and buys it; out of her earnings she plants a vineyard. - Proverbs 31:16", theme: "shrewd" },
+        ];
+
+        function CheepsMoneyApp() {
+            const defaultBudgets = [
+                { id: 1, category: 'Housing/Rent', limit: 680, spent: 0 },
+                { id: 2, category: 'Food & Groceries', limit: 120, spent: 0 },
+                { id: 3, category: 'Transportation', limit: 25, spent: 0 },
+                { id: 4, category: 'Entertainment', limit: 350, spent: 0 },
+                { id: 5, category: 'Utilities', limit: 10, spent: 0 },
+                { id: 6, category: 'Personal effects', limit: 50, spent: 0 },
+                { id: 7, category: 'Family spend', limit: 550, spent: 0 },
+                { id: 8, category: 'Weekly spend', limit: 125, spent: 0 },
+                { id: 9, category: 'Home replenishments', limit: 40, spent: 0 },
+                { id: 10, category: 'Tithe', limit: 350, spent: 0 },
+                { id: 11, category: 'Savings', limit: 100, spent: 0 },
+                { id: 12, category: 'Long Term savings', limit: 600, spent: 0 },
+                { id: 13, category: 'Emergency fund', limit: 500, spent: 0 },
+            ];
+
+            const [budgets, setBudgets] = useState([]);
+            const [expenses, setExpenses] = useState([]);
+            const [activeTab, setActiveTab] = useState('tracker');
+            const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Food & Groceries', date: new Date().toISOString().split('T')[0] });
+            const [newBudget, setNewBudget] = useState({ category: '', limit: '' });
+            const [dailyScripture, setDailyScripture] = useState(null);
+
+            // Load from localStorage
+            useEffect(() => {
+                const savedBudgets = localStorage.getItem('cheps_budgets');
+                const savedExpenses = localStorage.getItem('cheps_expenses');
+                
+                if (savedBudgets) {
+                    setBudgets(JSON.parse(savedBudgets));
+                } else {
+                    setBudgets(defaultBudgets);
+                }
+                
+                if (savedExpenses) {
+                    setExpenses(JSON.parse(savedExpenses));
+                }
+
+                // Daily scripture
+                const dailyIndex = new Date().getDate() % SCRIPTURES.length;
+                setDailyScripture(SCRIPTURES[dailyIndex]);
+            }, []);
+
+            // Save to localStorage
+            useEffect(() => {
+                if (budgets.length > 0) {
+                    localStorage.setItem('cheps_budgets', JSON.stringify(budgets));
+                }
+            }, [budgets]);
+
+            useEffect(() => {
+                localStorage.setItem('cheps_expenses', JSON.stringify(expenses));
+            }, [expenses]);
+
+            // Register service worker
+            useEffect(() => {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+                }
+            }, []);
+
+            const totalIncome = 3500;
+            const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const remaining = totalIncome - totalSpent;
+
+            const addExpense = () => {
+                if (newExpense.description && newExpense.amount) {
+                    const expense = {
+                        id: Date.now(),
+                        date: newExpense.date,
+                        description: newExpense.description,
+                        amount: parseFloat(newExpense.amount),
+                        category: newExpense.category,
+                    };
+                    setExpenses([expense, ...expenses]);
+                    
+                    setBudgets(budgets.map(b => 
+                        b.category === newExpense.category 
+                            ? { ...b, spent: b.spent + parseFloat(newExpense.amount) }
+                            : b
+                    ));
+                    
+                    setNewExpense({ description: '', amount: '', category: 'Food & Groceries', date: new Date().toISOString().split('T')[0] });
+                }
+            };
+
+            const addBudget = () => {
+                if (newBudget.category && newBudget.limit) {
+                    const budget = {
+                        id: Date.now(),
+                        category: newBudget.category,
+                        limit: parseFloat(newBudget.limit),
+                        spent: 0,
+                    };
+                    setBudgets([...budgets, budget]);
+                    setNewBudget({ category: '', limit: '' });
+                }
+            };
+
+            const deleteExpense = (id) => {
+                const expense = expenses.find(e => e.id === id);
+                if (expense) {
+                    setExpenses(expenses.filter(e => e.id !== id));
+                    setBudgets(budgets.map(b => 
+                        b.category === expense.category 
+                            ? { ...b, spent: Math.max(0, b.spent - expense.amount) }
+                            : b
+                    ));
+                }
+            };
+
+            const deleteBudget = (id) => {
+                setBudgets(budgets.filter(b => b.id !== id));
+            };
+
+            const exportToJSON = () => {
+                const data = {
+                    exportDate: new Date().toISOString(),
+                    appName: "Chep's Money",
+                    budgets,
+                    expenses,
+                    totalIncome,
+                    totalSpent,
+                };
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `cheps_money_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+            };
+
+            const exportToCSV = () => {
+                let csv = 'Date,Description,Amount,Category\n';
+                expenses.forEach(exp => {
+                    csv += `${exp.date},"${exp.description}",${exp.amount},${exp.category}\n`;
+                });
+                const dataBlob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `cheps_money_expenses_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                URL.revokeObjectURL(url);
+            };
+
+            const overBudgetCategories = budgets.filter(b => b.spent > b.limit);
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'linear-gradient(135deg, #0d2818 0%, #1a4d2e 50%, #0d2818 100%)' }}>
+                    {/* Header */}
+                    <div style={{ padding: '16px', paddingTop: '32px', borderBottom: '2px solid rgba(88,214,168,0.3)', background: 'linear-gradient(135deg, rgba(13,40,24,0.8) 0%, rgba(26,77,46,0.8) 100%)', backdropFilter: 'blur(10px)' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '28px' }}>🌿</div>
+                            <h1 style={{ fontSize: '28px', fontWeight: 'bold', background: 'linear-gradient(135deg, #88d6a8 0%, #58d6a8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>Chep's Money</h1>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#88d6a8', marginBottom: '12px', fontStyle: 'italic' }}>Shrewd stewardship, blessed abundance</p>
+                        
+                        {dailyScripture && (
+                            <div className="scripture-box">
+                                "{dailyScripture.text}"
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '8px' }}>
+                            {['tracker', 'expenses', 'data'].map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    style={{
+                                        padding: '8px 16px',
+                                        border: 'none',
+                                        background: activeTab === tab ? 'rgba(88,214,168,0.4)' : 'rgba(88,214,168,0.1)',
+                                        color: activeTab === tab ? '#88d6a8' : '#58d6a8',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        whiteSpace: 'nowrap',
+                                        transition: 'all 0.3s',
+                                        borderBottom: activeTab === tab ? '2px solid #88d6a8' : 'none'
+                                    }}
+                                >
+                                    {tab === 'tracker' && '💰 Tracker'}
+                                    {tab === 'expenses' && '📝 Expenses'}
+                                    {tab === 'data' && '💾 Data'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: '80px' }}>
+                        {activeTab === 'tracker' && (
+                            <div>
+                                {/* Stats */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.3) 0%, rgba(88,214,168,0.1) 100%)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(88,214,168,0.3)' }}>
+                                        <p style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px', color: '#88d6a8' }}>Monthly Income</p>
+                                        <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#58d6a8' }}>€{totalIncome}</p>
+                                    </div>
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(185,28,28,0.3) 0%, rgba(185,28,28,0.1) 100%)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(185,28,28,0.3)' }}>
+                                        <p style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px', color: '#f87171' }}>Total Spent</p>
+                                        <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#fca5a5' }}>€{totalSpent.toFixed(2)}</p>
+                                    </div>
+                                    <div style={{ background: remaining >= 0 ? 'linear-gradient(135deg, rgba(88,214,168,0.3) 0%, rgba(88,214,168,0.1) 100%)' : 'linear-gradient(135deg, rgba(185,28,28,0.3) 0%, rgba(185,28,28,0.1) 100%)', padding: '16px', borderRadius: '12px', border: remaining >= 0 ? '1px solid rgba(88,214,168,0.3)' : '1px solid rgba(185,28,28,0.3)', gridColumn: '1/3' }}>
+                                        <p style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px', color: remaining >= 0 ? '#88d6a8' : '#f87171' }}>Remaining Balance</p>
+                                        <p style={{ fontSize: '24px', fontWeight: 'bold', color: remaining >= 0 ? '#58d6a8' : '#fca5a5' }}>€{remaining.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Alerts */}
+                                {overBudgetCategories.length > 0 && (
+                                    <div style={{ background: 'rgba(185,28,28,0.2)', border: '2px solid rgba(185,28,28,0.5)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
+                                        <p style={{ color: '#fca5a5', fontSize: '14px', fontWeight: '500' }}>⚠️ Over Budget Alert</p>
+                                        <p style={{ color: '#fecaca', fontSize: '12px', marginTop: '4px' }}>
+                                            {overBudgetCategories.map(b => `${b.category}`).join(', ')}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Scripture Wisdom */}
+                                <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.2) 0%, rgba(45,122,74,0.2) 100%)', border: '2px solid rgba(88,214,168,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <p style={{ fontSize: '11px', color: '#88d6a8', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>📖 Wisdom for Today</p>
+                                    <p style={{ fontSize: '13px', color: '#c8f0e8', lineHeight: '1.6', fontStyle: 'italic' }}>
+                                        "Dishonest money dwindles away, but whoever gathers money little by little makes it grow." - Proverbs 13:11
+                                    </p>
+                                </div>
+
+                                {/* Add Expense */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Add Expense</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <input
+                                            type="date"
+                                            value={newExpense.date}
+                                            onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                                            style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="What did you spend on?"
+                                            value={newExpense.description}
+                                            onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                                            style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Amount (€)"
+                                            value={newExpense.amount}
+                                            onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                                            style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }}
+                                        />
+                                        <select
+                                            value={newExpense.category}
+                                            onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+                                            style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }}
+                                        >
+                                            {budgets.map(b => (
+                                                <option key={b.id} value={b.category}>{b.category}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            onClick={addExpense}
+                                            style={{ padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'transform 0.2s' }}
+                                        >
+                                            ➕ Record Expense
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Budget Categories */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Your Budget Categories</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {budgets.map(b => {
+                                            const percentage = (b.spent / b.limit) * 100;
+                                            const isOver = b.spent > b.limit;
+                                            return (
+                                                <div key={b.id} style={{ background: 'rgba(13,40,24,0.5)', padding: '12px', borderRadius: '8px', borderLeft: `3px solid ${isOver ? '#f87171' : '#88d6a8'}` }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', alignItems: 'center' }}>
+                                                        <p style={{ fontSize: '13px', fontWeight: '500', color: '#c8f0e8' }}>{b.category}</p>
+                                                        <button
+                                                            onClick={() => deleteBudget(b.id)}
+                                                            style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px' }}
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(71,85,105,0.3)', height: '6px', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+                                                        <div
+                                                            style={{
+                                                                height: '100%',
+                                                                background: isOver ? '#f87171' : 'linear-gradient(90deg, #58d6a8 0%, #88d6a8 100%)',
+                                                                width: `${Math.min(percentage, 100)}%`,
+                                                                transition: 'width 0.3s'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <p style={{ fontSize: '11px', color: isOver ? '#fca5a5' : '#88d6a8' }}>
+                                                        €{b.spent.toFixed(2)} / €{b.limit.toFixed(2)} {isOver && '⚠️'}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'expenses' && (
+                            <div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Your Spending Record ({expenses.length})</h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {expenses.length === 0 ? (
+                                        <p style={{ color: '#58d6a8', textAlign: 'center', padding: '32px 16px', fontStyle: 'italic' }}>No expenses recorded yet. Start your stewardship journey! 🌿</p>
+                                    ) : (
+                                        expenses.map(exp => (
+                                            <div key={exp.id} style={{ background: 'rgba(26,77,46,0.6)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', border: '1px solid rgba(88,214,168,0.2)' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <p style={{ fontSize: '14px', fontWeight: '500', color: '#c8f0e8' }}>{exp.description}</p>
+                                                    <p style={{ fontSize: '12px', color: '#88d6a8', marginTop: '4px' }}>{exp.date} • {exp.category}</p>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <p style={{ color: '#88d6a8', fontWeight: '600', fontSize: '14px' }}>€{exp.amount.toFixed(2)}</p>
+                                                    <button
+                                                        onClick={() => deleteExpense(exp.id)}
+                                                        style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px' }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'data' && (
+                            <div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#88d6a8' }}>Data & Backup</h2>
+                                
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>📥 Export Your Data</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <button
+                                            onClick={exportToJSON}
+                                            style={{ padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
+                                        >
+                                            💾 Export as JSON
+                                        </button>
+                                        <button
+                                            onClick={exportToCSV}
+                                            style={{ padding: '12px', background: 'linear-gradient(135deg, #45a088 0%, #3d8a75 100%)', border: 'none', color: '#f0f9f6', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
+                                        >
+                                            📊 Export as CSV
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.2) 0%, rgba(45,122,74,0.2) 100%)', border: '2px solid rgba(88,214,168,0.3)', borderRadius: '12px', padding: '16px' }}>
+                                    <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#88d6a8' }}>💾 How Your Data is Saved</h3>
+                                    <p style={{ fontSize: '13px', color: '#c8f0e8', lineHeight: '1.6' }}>
+                                        ✅ Your data is automatically saved to your iPhone<br/>
+                                        ✅ Works completely offline<br/>
+                                        ✅ Private & secure - no servers<br/>
+                                        ✅ Export regularly to keep backups
+                                    </p>
+                                </div>
+
+                                <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.15) 0%, rgba(45,122,74,0.15) 100%)', border: '2px solid rgba(88,214,168,0.3)', borderRadius: '12px', padding: '16px', marginTop: '16px' }}>
+                                    <p style={{ fontSize: '12px', color: '#88d6a8', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase' }}>📖 Financial Wisdom</p>
+                                    <p style={{ fontSize: '12px', color: '#c8f0e8', lineHeight: '1.6', fontStyle: 'italic' }}>
+                                        "She considers a field and buys it; out of her earnings she plants a vineyard." - Proverbs 31:16<br/><br/>
+                                        Like the Woman of Valor, manage your resources with wisdom and purpose. Track, plan, and grow your wealth with intentionality.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<CheepsMoneyApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
