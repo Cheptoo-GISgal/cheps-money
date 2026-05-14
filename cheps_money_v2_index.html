@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Chep's Money">
+    <meta name="theme-color" content="#1a4d2e">
+    <meta name="description" content="Chep's Money v2 - Shrewd financial stewardship with reviews and flexible budgeting">
+    
+    <link rel="manifest" href="manifest.json">
+    <title>Chep's Money v2 - Stewardship & Reviews</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body, #root {
+            width: 100%;
+            height: 100%;
+            font-family: 'Georgia', 'Garamond', serif;
+            background: linear-gradient(135deg, #0d2818 0%, #1a4d2e 50%, #0d2818 100%);
+            color: #f0f9f6;
+            overflow-x: hidden;
+        }
+        
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        input, select, button, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+            font-family: 'Georgia', serif;
+        }
+        
+        input:focus, select:focus, button:focus, textarea:focus {
+            outline: none;
+        }
+
+        .scripture-box {
+            background: linear-gradient(135deg, rgba(88,214,168,0.15) 0%, rgba(45,122,74,0.15) 100%);
+            border-left: 4px solid #58d6a8;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-style: italic;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #c8f0e8;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function CheepsMoneyV2() {
+            const defaultBudgets = [
+                { id: 1, category: 'Housing/Rent', limit: 680, spent: 0 },
+                { id: 2, category: 'Food & Groceries', limit: 120, spent: 0 },
+                { id: 3, category: 'Transportation', limit: 25, spent: 0 },
+                { id: 4, category: 'Entertainment', limit: 350, spent: 0 },
+                { id: 5, category: 'Utilities', limit: 10, spent: 0 },
+                { id: 6, category: 'Personal effects', limit: 50, spent: 0 },
+                { id: 7, category: 'Family spend', limit: 550, spent: 0 },
+                { id: 8, category: 'Weekly spend', limit: 125, spent: 0 },
+                { id: 9, category: 'Home replenishments', limit: 40, spent: 0 },
+                { id: 10, category: 'Tithe', limit: 350, spent: 0 },
+                { id: 11, category: 'Miscellaneous', limit: 100, spent: 0 },
+                { id: 12, category: 'Long Term savings', limit: 600, spent: 0 },
+                { id: 13, category: 'Emergency fund', limit: 500, spent: 0 },
+            ];
+
+            const [budgets, setBudgets] = useState([]);
+            const [expenses, setExpenses] = useState([]);
+            const [incomeSources, setIncomeSources] = useState([]);
+            const [activeTab, setActiveTab] = useState('tracker');
+            const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Food & Groceries', date: new Date().toISOString().split('T')[0] });
+            const [newBudget, setNewBudget] = useState({ category: '', limit: '' });
+            const [newIncomeSource, setNewIncomeSource] = useState({ name: '', amount: '' });
+            const [editingBudget, setEditingBudget] = useState(null);
+            const [reviewMonth, setReviewMonth] = useState(new Date().toISOString().split('T')[0].substring(0, 7));
+            const [reviewComments, setReviewComments] = useState('');
+            const [isEditingBudgets, setIsEditingBudgets] = useState(false);
+            const [monthStart, setMonthStart] = useState(new Date().getDate() === 1);
+
+            // Load from localStorage
+            useEffect(() => {
+                const savedBudgets = localStorage.getItem('cheps_budgets_v2');
+                const savedExpenses = localStorage.getItem('cheps_expenses_v2');
+                const savedIncome = localStorage.getItem('cheps_income_v2');
+                const savedReviews = localStorage.getItem('cheps_reviews_v2');
+                
+                if (savedBudgets) {
+                    setBudgets(JSON.parse(savedBudgets));
+                } else {
+                    setBudgets(defaultBudgets);
+                }
+                
+                if (savedExpenses) {
+                    setExpenses(JSON.parse(savedExpenses));
+                }
+
+                if (savedIncome) {
+                    setIncomeSources(JSON.parse(savedIncome));
+                } else {
+                    setIncomeSources([{ id: 1, name: 'Primary Income', amount: 3500 }]);
+                }
+
+                if (savedReviews) {
+                    const reviews = JSON.parse(savedReviews);
+                    const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
+                    const thisMonthReview = reviews.find(r => r.month === currentMonth);
+                    if (thisMonthReview) {
+                        setReviewComments(thisMonthReview.comments || '');
+                    }
+                }
+
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+                }
+            }, []);
+
+            // Save to localStorage
+            useEffect(() => {
+                if (budgets.length > 0) {
+                    localStorage.setItem('cheps_budgets_v2', JSON.stringify(budgets));
+                }
+            }, [budgets]);
+
+            useEffect(() => {
+                localStorage.setItem('cheps_expenses_v2', JSON.stringify(expenses));
+            }, [expenses]);
+
+            useEffect(() => {
+                localStorage.setItem('cheps_income_v2', JSON.stringify(incomeSources));
+            }, [incomeSources]);
+
+            const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
+            const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const remaining = totalIncome - totalSpent;
+
+            const addExpense = () => {
+                if (newExpense.description && newExpense.amount) {
+                    const expense = {
+                        id: Date.now(),
+                        date: newExpense.date,
+                        description: newExpense.description,
+                        amount: parseFloat(newExpense.amount),
+                        category: newExpense.category,
+                    };
+                    setExpenses([expense, ...expenses]);
+                    
+                    setBudgets(budgets.map(b => 
+                        b.category === newExpense.category 
+                            ? { ...b, spent: b.spent + parseFloat(newExpense.amount) }
+                            : b
+                    ));
+                    
+                    setNewExpense({ description: '', amount: '', category: 'Food & Groceries', date: new Date().toISOString().split('T')[0] });
+                }
+            };
+
+            const addIncomeSource = () => {
+                if (newIncomeSource.name && newIncomeSource.amount) {
+                    const source = {
+                        id: Date.now(),
+                        name: newIncomeSource.name,
+                        amount: parseFloat(newIncomeSource.amount),
+                    };
+                    setIncomeSources([...incomeSources, source]);
+                    setNewIncomeSource({ name: '', amount: '' });
+                }
+            };
+
+            const deleteIncomeSource = (id) => {
+                setIncomeSources(incomeSources.filter(s => s.id !== id));
+            };
+
+            const deleteExpense = (id) => {
+                const expense = expenses.find(e => e.id === id);
+                if (expense) {
+                    setExpenses(expenses.filter(e => e.id !== id));
+                    setBudgets(budgets.map(b => 
+                        b.category === expense.category 
+                            ? { ...b, spent: Math.max(0, b.spent - expense.amount) }
+                            : b
+                    ));
+                }
+            };
+
+            const saveBudgetEdit = (id, newLimit) => {
+                setBudgets(budgets.map(b => 
+                    b.id === id ? { ...b, limit: parseFloat(newLimit) } : b
+                ));
+                setEditingBudget(null);
+            };
+
+            const saveReview = () => {
+                const reviews = JSON.parse(localStorage.getItem('cheps_reviews_v2') || '[]');
+                const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
+                const existingIndex = reviews.findIndex(r => r.month === currentMonth);
+                
+                const reviewData = {
+                    month: currentMonth,
+                    comments: reviewComments,
+                    budgets: JSON.parse(JSON.stringify(budgets)),
+                    totalSpent,
+                    totalIncome,
+                    timestamp: new Date().toISOString()
+                };
+
+                if (existingIndex >= 0) {
+                    reviews[existingIndex] = reviewData;
+                } else {
+                    reviews.push(reviewData);
+                }
+
+                localStorage.setItem('cheps_reviews_v2', JSON.stringify(reviews));
+                alert('Review saved! 💚');
+            };
+
+            const monthExpenses = expenses.filter(e => e.date.startsWith(reviewMonth));
+            const monthSpent = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+            const overBudgetCategories = budgets.filter(b => b.spent > b.limit);
+
+            const categoryColors = {
+                'Housing/Rent': '#58d6a8',
+                'Food & Groceries': '#88d6a8',
+                'Transportation': '#45a088',
+                'Entertainment': '#3d8a75',
+                'Utilities': '#2d7a4a',
+                'Personal effects': '#1f6b3d',
+                'Family spend': '#58d6a8',
+                'Weekly spend': '#45a088',
+                'Home replenishments': '#88d6a8',
+                'Tithe': '#58d6a8',
+                'Miscellaneous': '#45a088',
+                'Long Term savings': '#3d8a75',
+                'Emergency fund': '#2d7a4a',
+            };
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'linear-gradient(135deg, #0d2818 0%, #1a4d2e 50%, #0d2818 100%)' }}>
+                    {/* Header */}
+                    <div style={{ padding: '16px', paddingTop: '32px', borderBottom: '2px solid rgba(88,214,168,0.3)', background: 'linear-gradient(135deg, rgba(13,40,24,0.8) 0%, rgba(26,77,46,0.8) 100%)', backdropFilter: 'blur(10px)' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '28px' }}>🌿</div>
+                            <h1 style={{ fontSize: '28px', fontWeight: 'bold', background: 'linear-gradient(135deg, #88d6a8 0%, #58d6a8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>Chep's Money v2</h1>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#88d6a8', marginBottom: '12px', fontStyle: 'italic' }}>Flexible budgeting, insightful reviews</p>
+
+                        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '8px' }}>
+                            {['tracker', 'income', 'budgets', 'reviews', 'data'].map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    style={{
+                                        padding: '8px 16px',
+                                        border: 'none',
+                                        background: activeTab === tab ? 'rgba(88,214,168,0.4)' : 'rgba(88,214,168,0.1)',
+                                        color: activeTab === tab ? '#88d6a8' : '#58d6a8',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        whiteSpace: 'nowrap',
+                                        transition: 'all 0.3s',
+                                        borderBottom: activeTab === tab ? '2px solid #88d6a8' : 'none'
+                                    }}
+                                >
+                                    {tab === 'tracker' && '💰 Tracker'}
+                                    {tab === 'income' && '💵 Income'}
+                                    {tab === 'budgets' && '📊 Budgets'}
+                                    {tab === 'reviews' && '📋 Reviews'}
+                                    {tab === 'data' && '💾 Data'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: '80px' }}>
+                        
+                        {/* TRACKER TAB */}
+                        {activeTab === 'tracker' && (
+                            <div>
+                                {/* Stats */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.3) 0%, rgba(88,214,168,0.1) 100%)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(88,214,168,0.3)' }}>
+                                        <p style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px', color: '#88d6a8' }}>Total Income</p>
+                                        <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#58d6a8' }}>€{totalIncome.toFixed(2)}</p>
+                                    </div>
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(185,28,28,0.3) 0%, rgba(185,28,28,0.1) 100%)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(185,28,28,0.3)' }}>
+                                        <p style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px', color: '#f87171' }}>Total Spent</p>
+                                        <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#fca5a5' }}>€{totalSpent.toFixed(2)}</p>
+                                    </div>
+                                    <div style={{ background: remaining >= 0 ? 'linear-gradient(135deg, rgba(88,214,168,0.3) 0%, rgba(88,214,168,0.1) 100%)' : 'linear-gradient(135deg, rgba(185,28,28,0.3) 0%, rgba(185,28,28,0.1) 100%)', padding: '16px', borderRadius: '12px', border: remaining >= 0 ? '1px solid rgba(88,214,168,0.3)' : '1px solid rgba(185,28,28,0.3)', gridColumn: '1/3' }}>
+                                        <p style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px', color: remaining >= 0 ? '#88d6a8' : '#f87171' }}>Remaining Balance</p>
+                                        <p style={{ fontSize: '24px', fontWeight: 'bold', color: remaining >= 0 ? '#58d6a8' : '#fca5a5' }}>€{remaining.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Alerts */}
+                                {overBudgetCategories.length > 0 && (
+                                    <div style={{ background: 'rgba(185,28,28,0.2)', border: '2px solid rgba(185,28,28,0.5)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
+                                        <p style={{ color: '#fca5a5', fontSize: '14px', fontWeight: '500' }}>⚠️ Over Budget Alert</p>
+                                        <p style={{ color: '#fecaca', fontSize: '12px', marginTop: '4px' }}>
+                                            {overBudgetCategories.map(b => `${b.category}`).join(', ')}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Add Expense */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Add Expense</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <input type="date" value={newExpense.date} onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })} style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }} />
+                                        <input type="text" placeholder="Description" value={newExpense.description} onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })} style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }} />
+                                        <input type="number" placeholder="Amount (€)" value={newExpense.amount} onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })} style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }} />
+                                        <select value={newExpense.category} onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })} style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }}>
+                                            {budgets.map(b => (<option key={b.id} value={b.category}>{b.category}</option>))}
+                                        </select>
+                                        <button onClick={addExpense} style={{ padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                                            ➕ Record Expense
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Budget Overview */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Budget Categories</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {budgets.map(b => {
+                                            const percentage = (b.spent / b.limit) * 100;
+                                            const isOver = b.spent > b.limit;
+                                            return (
+                                                <div key={b.id} style={{ background: 'rgba(13,40,24,0.5)', padding: '12px', borderRadius: '8px', borderLeft: `3px solid ${isOver ? '#f87171' : '#88d6a8'}` }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', alignItems: 'center' }}>
+                                                        <p style={{ fontSize: '13px', fontWeight: '500', color: '#c8f0e8' }}>{b.category}</p>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(71,85,105,0.3)', height: '6px', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+                                                        <div style={{ height: '100%', background: isOver ? '#f87171' : 'linear-gradient(90deg, #58d6a8 0%, #88d6a8 100%)', width: `${Math.min(percentage, 100)}%`, transition: 'width 0.3s' }} />
+                                                    </div>
+                                                    <p style={{ fontSize: '11px', color: isOver ? '#fca5a5' : '#88d6a8' }}>€{b.spent.toFixed(2)} / €{b.limit.toFixed(2)} {isOver && '⚠️'}</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Recent Expenses */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Recent Expenses</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                                        {expenses.length === 0 ? (
+                                            <p style={{ color: '#58d6a8', fontSize: '13px', textAlign: 'center' }}>No expenses yet</p>
+                                        ) : (
+                                            expenses.slice(0, 10).map(exp => (
+                                                <div key={exp.id} style={{ background: 'rgba(13,40,24,0.5)', padding: '8px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <p style={{ fontSize: '13px', color: '#c8f0e8' }}>{exp.description}</p>
+                                                        <p style={{ fontSize: '11px', color: '#88d6a8' }}>{exp.date}</p>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <p style={{ color: '#88d6a8', fontWeight: '600', fontSize: '12px' }}>€{exp.amount.toFixed(2)}</p>
+                                                        <button onClick={() => deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>🗑️</button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* INCOME SOURCES TAB */}
+                        {activeTab === 'income' && (
+                            <div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#88d6a8' }}>Income Sources</h2>
+                                
+                                {/* Current Income */}
+                                <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.2) 0%, rgba(45,122,74,0.2) 100%)', border: '2px solid rgba(88,214,168,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <p style={{ fontSize: '12px', color: '#88d6a8', fontWeight: '600', marginBottom: '8px' }}>Total Monthly Income</p>
+                                    <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#58d6a8' }}>€{totalIncome.toFixed(2)}</p>
+                                </div>
+
+                                {/* Income Sources List */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Your Income</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                                        {incomeSources.map(source => (
+                                            <div key={source.id} style={{ background: 'rgba(13,40,24,0.5)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '14px', fontWeight: '500', color: '#c8f0e8' }}>{source.name}</p>
+                                                    <p style={{ fontSize: '12px', color: '#88d6a8' }}>€{source.amount.toFixed(2)}</p>
+                                                </div>
+                                                <button onClick={() => deleteIncomeSource(source.id)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Add New Income Source */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Add Income Source</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <input type="text" placeholder="Income source name (e.g., Freelance, Bonus)" value={newIncomeSource.name} onChange={(e) => setNewIncomeSource({ ...newIncomeSource, name: e.target.value })} style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }} />
+                                        <input type="number" placeholder="Amount (€)" value={newIncomeSource.amount} onChange={(e) => setNewIncomeSource({ ...newIncomeSource, amount: e.target.value })} style={{ padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }} />
+                                        <button onClick={addIncomeSource} style={{ padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                                            ➕ Add Income
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* BUDGETS TAB - EDITABLE */}
+                        {activeTab === 'budgets' && (
+                            <div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Manage Your Budgets</h2>
+                                
+                                {!isEditingBudgets ? (
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.2) 0%, rgba(45,122,74,0.2) 100%)', border: '2px solid rgba(88,214,168,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                        <p style={{ fontSize: '12px', color: '#88d6a8', marginBottom: '12px' }}>💡 Edit your budget allocations for the month. Adjustments can only be made at month-start.</p>
+                                        <button onClick={() => setIsEditingBudgets(true)} style={{ padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', width: '100%' }}>
+                                            ✏️ Edit Budgets for This Month
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ background: 'rgba(185,28,28,0.2)', border: '2px solid rgba(185,28,28,0.5)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                        <p style={{ color: '#fca5a5', fontSize: '12px', marginBottom: '12px' }}>⚠️ You're in edit mode. Make your changes carefully!</p>
+                                    </div>
+                                )}
+
+                                {/* Budget List - Editable or View */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Budget Categories</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {budgets.map(b => (
+                                            <div key={b.id} style={{ background: 'rgba(13,40,24,0.5)', padding: '12px', borderRadius: '8px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#c8f0e8' }}>{b.category}</p>
+                                                </div>
+                                                {editingBudget === b.id ? (
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <input type="number" defaultValue={b.limit} id={`edit-${b.id}`} style={{ flex: 1, padding: '8px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '6px', color: '#c8f0e8', fontSize: '13px' }} />
+                                                        <button onClick={() => saveBudgetEdit(b.id, document.getElementById(`edit-${b.id}`).value)} style={{ padding: '8px 12px', background: '#58d6a8', border: 'none', color: '#0d2818', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                                                        <button onClick={() => setEditingBudget(null)} style={{ padding: '8px 12px', background: '#f87171', border: 'none', color: 'white', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <p style={{ fontSize: '12px', color: '#88d6a8', fontWeight: '600' }}>€{b.limit.toFixed(2)}</p>
+                                                        {isEditingBudgets && <button onClick={() => setEditingBudget(b.id)} style={{ background: 'none', border: 'none', color: '#88d6a8', cursor: 'pointer', fontSize: '14px' }}>✏️</button>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {isEditingBudgets && (
+                                        <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => setIsEditingBudgets(false)} style={{ flex: 1, padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+                                                ✓ Done Editing
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* REVIEWS TAB */}
+                        {activeTab === 'reviews' && (
+                            <div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#88d6a8' }}>Monthly Review</h2>
+                                
+                                {/* Review Period Selector */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <label style={{ fontSize: '12px', color: '#88d6a8', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Review Period (Month)</label>
+                                    <input type="month" value={reviewMonth} onChange={(e) => setReviewMonth(e.target.value)} style={{ width: '100%', padding: '10px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '14px' }} />
+                                </div>
+
+                                {/* Month Summary */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(88,214,168,0.3) 0%, rgba(88,214,168,0.1) 100%)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(88,214,168,0.3)' }}>
+                                        <p style={{ fontSize: '11px', color: '#88d6a8', marginBottom: '4px' }}>Income (This Month)</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#58d6a8' }}>€{totalIncome.toFixed(2)}</p>
+                                    </div>
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(185,28,28,0.3) 0%, rgba(185,28,28,0.1) 100%)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(185,28,28,0.3)' }}>
+                                        <p style={{ fontSize: '11px', color: '#f87171', marginBottom: '4px' }}>Spent (This Month)</p>
+                                        <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#fca5a5' }}>€{monthSpent.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Category Performance */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Category Performance</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {budgets.map(b => {
+                                            const percentage = (b.spent / b.limit) * 100;
+                                            const status = b.spent > b.limit ? '⚠️ Over' : b.spent > b.limit * 0.8 ? '⚡ Near limit' : '✓ On track';
+                                            return (
+                                                <div key={b.id} style={{ background: 'rgba(13,40,24,0.5)', padding: '12px', borderRadius: '8px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                        <p style={{ fontSize: '12px', fontWeight: '500', color: '#c8f0e8' }}>{b.category}</p>
+                                                        <p style={{ fontSize: '11px', color: '#88d6a8' }}>{status}</p>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(71,85,105,0.3)', height: '4px', borderRadius: '2px', overflow: 'hidden' }}>
+                                                        <div style={{ height: '100%', background: b.spent > b.limit ? '#f87171' : percentage > 80 ? '#fbbf24' : '#58d6a8', width: `${Math.min(percentage, 100)}%` }} />
+                                                    </div>
+                                                    <p style={{ fontSize: '10px', color: '#88d6a8', marginTop: '4px' }}>€{b.spent.toFixed(2)} / €{b.limit.toFixed(2)}</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Review Comments */}
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>Monthly Reflections</h3>
+                                    <label style={{ fontSize: '12px', color: '#88d6a8', display: 'block', marginBottom: '8px' }}>What went well? What can improve? (Optional)</label>
+                                    <textarea value={reviewComments} onChange={(e) => setReviewComments(e.target.value)} placeholder="Write your thoughts about this month's spending..." style={{ width: '100%', padding: '12px', background: 'rgba(13,40,24,0.8)', border: '1px solid rgba(88,214,168,0.3)', borderRadius: '8px', color: '#c8f0e8', fontSize: '13px', fontFamily: 'Georgia, serif' }} />
+                                    <button onClick={saveReview} style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                                        💾 Save Review
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* DATA TAB */}
+                        {activeTab === 'data' && (
+                            <div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#88d6a8' }}>Data & Backup</h2>
+                                
+                                <div style={{ background: 'rgba(26,77,46,0.6)', border: '2px solid rgba(88,214,168,0.2)', borderRadius: '12px', padding: '16px' }}>
+                                    <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#88d6a8' }}>📥 Export Data</h3>
+                                    <p style={{ fontSize: '12px', color: '#c8f0e8', marginBottom: '12px' }}>Your data is automatically saved. Export regularly to keep backups safe!</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <button onClick={() => {
+                                            const data = { budgets, expenses, incomeSources, timestamp: new Date().toISOString() };
+                                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                            const url = URL.createObjectURL(blob);
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.download = `cheps_money_backup_${new Date().toISOString().split('T')[0]}.json`;
+                                            link.click();
+                                        }} style={{ padding: '12px', background: 'linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%)', border: 'none', color: '#0d2818', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
+                                            💾 Export JSON Backup
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<CheepsMoneyV2App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
