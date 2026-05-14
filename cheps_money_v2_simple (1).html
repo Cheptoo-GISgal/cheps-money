@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Chep's Money">
+    <title>Chep's Money v2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; font-family: Georgia, serif; background: linear-gradient(135deg, #0d2818 0%, #1a4d2e 50%, #0d2818 100%); color: #f0f9f6; }
+        body { -webkit-user-select: none; user-select: none; }
+        input, select, button, textarea { -webkit-user-select: text; user-select: text; font-family: Georgia, serif; }
+        input:focus, select:focus, button:focus, textarea:focus { outline: none; }
+        
+        #app { display: flex; flex-direction: column; height: 100vh; }
+        .header { padding: 16px; padding-top: 32px; border-bottom: 2px solid rgba(88,214,168,0.3); background: linear-gradient(135deg, rgba(13,40,24,0.8) 0%, rgba(26,77,46,0.8) 100%); }
+        .header h1 { font-size: 28px; font-weight: bold; color: #88d6a8; margin-bottom: 8px; }
+        .header p { font-size: 12px; color: #88d6a8; font-style: italic; margin-bottom: 12px; }
+        .tabs { display: flex; gap: 8px; overflow-x: auto; padding-top: 8px; }
+        .tab-btn { padding: 8px 16px; border: none; background: rgba(88,214,168,0.1); color: #58d6a8; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; transition: all 0.3s; }
+        .tab-btn.active { background: rgba(88,214,168,0.4); color: #88d6a8; border-bottom: 2px solid #88d6a8; }
+        
+        .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .stat-box { background: linear-gradient(135deg, rgba(88,214,168,0.3) 0%, rgba(88,214,168,0.1) 100%); padding: 16px; border-radius: 12px; border: 1px solid rgba(88,214,168,0.3); margin-bottom: 12px; }
+        .stat-box.danger { background: linear-gradient(135deg, rgba(185,28,28,0.3) 0%, rgba(185,28,28,0.1) 100%); border: 1px solid rgba(185,28,28,0.3); }
+        .stat-label { font-size: 12px; opacity: 0.8; color: #88d6a8; margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #58d6a8; }
+        .stat-box.danger .stat-value { color: #fca5a5; }
+        
+        .card { background: rgba(26,77,46,0.6); border: 2px solid rgba(88,214,168,0.2); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .card h3 { font-size: 16px; font-weight: 600; color: #88d6a8; margin-bottom: 12px; }
+        
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        input, select, textarea { padding: 10px; background: rgba(13,40,24,0.8); border: 1px solid rgba(88,214,168,0.3); border-radius: 8px; color: #c8f0e8; font-size: 14px; }
+        
+        button { padding: 12px; background: linear-gradient(135deg, #58d6a8 0%, #88d6a8 100%); border: none; color: #0d2818; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
+        
+        .item { background: rgba(13,40,24,0.5); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .item-left { flex: 1; }
+        .item-name { font-size: 14px; font-weight: 500; color: #c8f0e8; }
+        .item-detail { font-size: 12px; color: #88d6a8; margin-top: 4px; }
+        .item-right { display: flex; align-items: center; gap: 8px; }
+        .item-amount { color: #88d6a8; font-weight: 600; font-size: 12px; }
+        .delete-btn { background: none; border: none; color: #9CA3AF; cursor: pointer; font-size: 16px; padding: 0; }
+        
+        .progress-bar { background: rgba(71,85,105,0.3); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+        .progress { height: 100%; background: linear-gradient(90deg, #58d6a8 0%, #88d6a8 100%); transition: width 0.3s; }
+        .progress.over { background: #f87171; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .grid-full { grid-column: 1/3; }
+        
+        textarea { min-height: 100px; resize: vertical; }
+        
+        .alert { background: rgba(185,28,28,0.2); border: 2px solid rgba(185,28,28,0.5); border-radius: 12px; padding: 12px; margin-bottom: 16px; color: #fca5a5; font-size: 14px; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div style="display: flex; align-items: flex-end; gap: 8px;">
+                <span style="font-size: 28px;">🌿</span>
+                <h1>Chep's Money v2</h1>
+            </div>
+            <p>Flexible budgeting, insightful reviews</p>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('tracker')">💰 Tracker</button>
+                <button class="tab-btn" onclick="switchTab('income')">💵 Income</button>
+                <button class="tab-btn" onclick="switchTab('budgets')">📊 Budgets</button>
+                <button class="tab-btn" onclick="switchTab('reviews')">📋 Reviews</button>
+                <button class="tab-btn" onclick="switchTab('data')">💾 Data</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- TRACKER TAB -->
+            <div id="tracker" class="tab-content active">
+                <div class="grid-2">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Income</div>
+                        <div class="stat-value" id="stat-income">€0</div>
+                    </div>
+                    <div class="stat-box danger">
+                        <div class="stat-label">Total Spent</div>
+                        <div class="stat-value" id="stat-spent">€0</div>
+                    </div>
+                    <div class="stat-box grid-full" id="stat-remaining-box">
+                        <div class="stat-label">Remaining</div>
+                        <div class="stat-value" id="stat-remaining">€0</div>
+                    </div>
+                </div>
+
+                <div id="alert-box"></div>
+
+                <div class="card">
+                    <h3>Add Expense</h3>
+                    <div class="input-group">
+                        <input type="date" id="exp-date">
+                        <input type="text" id="exp-desc" placeholder="Description">
+                        <input type="number" id="exp-amount" placeholder="Amount (€)">
+                        <select id="exp-category"></select>
+                        <button onclick="addExpense()">➕ Record Expense</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Budget Categories</h3>
+                    <div id="budgets-list"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Expenses</h3>
+                    <div id="expenses-list" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <!-- INCOME TAB -->
+            <div id="income" class="tab-content">
+                <div class="card">
+                    <h3>Total Monthly Income</h3>
+                    <div style="font-size: 32px; font-weight: bold; color: #58d6a8;" id="total-income-display">€0</div>
+                </div>
+
+                <div class="card">
+                    <h3>Your Income Sources</h3>
+                    <div id="income-sources-list"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Add Income Source</h3>
+                    <div class="input-group">
+                        <input type="text" id="income-name" placeholder="Income source name">
+                        <input type="number" id="income-amount" placeholder="Amount (€)">
+                        <button onclick="addIncomeSource()">➕ Add Income</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUDGETS TAB -->
+            <div id="budgets" class="tab-content">
+                <h2 style="color: #88d6a8; margin-bottom: 16px;">Manage Your Budgets</h2>
+                <div class="card">
+                    <h3>Budget Categories</h3>
+                    <div id="budgets-edit-list"></div>
+                    <button onclick="toggleEditBudgets()" style="margin-top: 16px; width: 100%;">✏️ Edit Budgets</button>
+                </div>
+            </div>
+
+            <!-- REVIEWS TAB -->
+            <div id="reviews" class="tab-content">
+                <div class="grid-2">
+                    <div class="stat-box">
+                        <div class="stat-label">Income</div>
+                        <div class="stat-value" id="review-income">€0</div>
+                    </div>
+                    <div class="stat-box danger">
+                        <div class="stat-label">Spent</div>
+                        <div class="stat-value" id="review-spent">€0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Monthly Reflections</h3>
+                    <textarea id="review-comments" placeholder="Write your thoughts about this month..."></textarea>
+                    <button onclick="saveReview()" style="margin-top: 12px; width: 100%;">💾 Save Review</button>
+                </div>
+            </div>
+
+            <!-- DATA TAB -->
+            <div id="data" class="tab-content">
+                <div class="card">
+                    <h3>📥 Export Data</h3>
+                    <button onclick="exportData()" style="width: 100%;">💾 Export JSON Backup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date input
+        document.getElementById('exp-date').valueAsDate = new Date();
+
+        // Default data
+        const defaultBudgets = [
+            { id: 1, category: 'Housing/Rent', limit: 680, spent: 0 },
+            { id: 2, category: 'Food & Groceries', limit: 120, spent: 0 },
+            { id: 3, category: 'Transportation', limit: 25, spent: 0 },
+            { id: 4, category: 'Entertainment', limit: 350, spent: 0 },
+            { id: 5, category: 'Utilities', limit: 10, spent: 0 },
+            { id: 6, category: 'Personal effects', limit: 50, spent: 0 },
+            { id: 7, category: 'Family spend', limit: 550, spent: 0 },
+            { id: 8, category: 'Weekly spend', limit: 125, spent: 0 },
+            { id: 9, category: 'Home replenishments', limit: 40, spent: 0 },
+            { id: 10, category: 'Tithe', limit: 350, spent: 0 },
+            { id: 11, category: 'Miscellaneous', limit: 100, spent: 0 },
+            { id: 12, category: 'Long Term savings', limit: 600, spent: 0 },
+            { id: 13, category: 'Emergency fund', limit: 500, spent: 0 },
+        ];
+
+        let budgets = JSON.parse(localStorage.getItem('cheps_v2_budgets')) || defaultBudgets;
+        let expenses = JSON.parse(localStorage.getItem('cheps_v2_expenses')) || [];
+        let incomeSources = JSON.parse(localStorage.getItem('cheps_v2_income')) || [{ id: 1, name: 'Primary Income', amount: 3500 }];
+        let isEditingBudgets = false;
+
+        function saveBudgets() { localStorage.setItem('cheps_v2_budgets', JSON.stringify(budgets)); }
+        function saveExpenses() { localStorage.setItem('cheps_v2_expenses', JSON.stringify(expenses)); }
+        function saveIncome() { localStorage.setItem('cheps_v2_income', JSON.stringify(incomeSources)); }
+
+        function getTotalIncome() { return incomeSources.reduce((sum, s) => sum + s.amount, 0); }
+        function getTotalSpent() { return expenses.reduce((sum, e) => sum + e.amount, 0); }
+
+        function addExpense() {
+            const date = document.getElementById('exp-date').value;
+            const desc = document.getElementById('exp-desc').value;
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            const category = document.getElementById('exp-category').value;
+
+            if (!desc || !amount || !category) return alert('Fill all fields!');
+
+            expenses.unshift({ id: Date.now(), date, description: desc, amount, category });
+            const budget = budgets.find(b => b.category === category);
+            if (budget) budget.spent += amount;
+
+            saveExpenses();
+            saveBudgets();
+
+            document.getElementById('exp-desc').value = '';
+            document.getElementById('exp-amount').value = '';
+            document.getElementById('exp-date').valueAsDate = new Date();
+
+            render();
+        }
+
+        function addIncomeSource() {
+            const name = document.getElementById('income-name').value;
+            const amount = parseFloat(document.getElementById('income-amount').value);
+            if (!name || !amount) return alert('Fill all fields!');
+
+            incomeSources.push({ id: Date.now(), name, amount });
+            saveIncome();
+
+            document.getElementById('income-name').value = '';
+            document.getElementById('income-amount').value = '';
+
+            render();
+        }
+
+        function deleteExpense(id) {
+            const exp = expenses.find(e => e.id === id);
+            const budget = budgets.find(b => b.category === exp.category);
+            if (budget) budget.spent = Math.max(0, budget.spent - exp.amount);
+            expenses = expenses.filter(e => e.id !== id);
+            saveExpenses();
+            saveBudgets();
+            render();
+        }
+
+        function deleteIncome(id) {
+            incomeSources = incomeSources.filter(s => s.id !== id);
+            saveIncome();
+            render();
+        }
+
+        function toggleEditBudgets() {
+            isEditingBudgets = !isEditingBudgets;
+            render();
+        }
+
+        function saveBudgetEdit(id) {
+            const input = document.getElementById(`budget-edit-${id}`);
+            const budget = budgets.find(b => b.id === id);
+            if (budget && input) {
+                budget.limit = parseFloat(input.value);
+                saveBudgets();
+            }
+            render();
+        }
+
+        function saveReview() {
+            const comments = document.getElementById('review-comments').value;
+            alert('Review saved! 💚');
+            localStorage.setItem('cheps_v2_review', comments);
+        }
+
+        function exportData() {
+            const data = { budgets, expenses, incomeSources, timestamp: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cheps_money_v2_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            render();
+        }
+
+        function render() {
+            const totalIncome = getTotalIncome();
+            const totalSpent = getTotalSpent();
+            const remaining = totalIncome - totalSpent;
+
+            // Update stats
+            document.getElementById('stat-income').textContent = '€' + totalIncome.toFixed(2);
+            document.getElementById('stat-spent').textContent = '€' + totalSpent.toFixed(2);
+            document.getElementById('stat-remaining').textContent = '€' + remaining.toFixed(2);
+            document.getElementById('stat-remaining-box').className = 'stat-box grid-full' + (remaining < 0 ? ' danger' : '');
+
+            // Update review stats
+            document.getElementById('review-income').textContent = '€' + totalIncome.toFixed(2);
+            document.getElementById('review-spent').textContent = '€' + totalSpent.toFixed(2);
+            document.getElementById('total-income-display').textContent = '€' + totalIncome.toFixed(2);
+
+            // Update category select
+            const categorySelect = document.getElementById('exp-category');
+            categorySelect.innerHTML = budgets.map(b => `<option value="${b.category}">${b.category}</option>`).join('');
+
+            // Render budgets list
+            document.getElementById('budgets-list').innerHTML = budgets.map(b => {
+                const pct = (b.spent / b.limit) * 100;
+                const isOver = b.spent > b.limit;
+                return `
+                    <div class="item">
+                        <div class="item-left">
+                            <div class="item-name">${b.category}</div>
+                            <div class="progress-bar"><div class="progress ${isOver ? 'over' : ''}" style="width: ${Math.min(pct, 100)}%"></div></div>
+                            <div class="item-detail">€${b.spent.toFixed(2)} / €${b.limit.toFixed(2)} ${isOver ? '⚠️' : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Render budgets edit list
+            document.getElementById('budgets-edit-list').innerHTML = budgets.map(b => {
+                if (isEditingBudgets) {
+                    return `
+                        <div class="item" style="flex-direction: column; align-items: flex-start;">
+                            <div style="width: 100%; margin-bottom: 8px;">
+                                <div class="item-name">${b.category}</div>
+                            </div>
+                            <div style="width: 100%; display: flex; gap: 8px;">
+                                <input type="number" id="budget-edit-${b.id}" value="${b.limit}" style="flex: 1;">
+                                <button onclick="saveBudgetEdit(${b.id})" style="padding: 8px 12px; font-size: 12px;">✓</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="item">
+                            <div class="item-left">
+                                <div class="item-name">${b.category}</div>
+                                <div class="item-detail">€${b.limit.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            // Render expenses list
+            document.getElementById('expenses-list').innerHTML = expenses.slice(0, 10).map(e => `
+                <div class="item">
+                    <div class="item-left">
+                        <div class="item-name">${e.description}</div>
+                        <div class="item-detail">${e.date} • ${e.category}</div>
+                    </div>
+                    <div class="item-right">
+                        <div class="item-amount">€${e.amount.toFixed(2)}</div>
+                        <button class="delete-btn" onclick="deleteExpense(${e.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render income sources
+            document.getElementById('income-sources-list').innerHTML = incomeSources.map(s => `
+                <div class="item">
+                    <div class="item-left">
+                        <div class="item-name">${s.name}</div>
+                        <div class="item-detail">€${s.amount.toFixed(2)}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteIncome(${s.id})">🗑️</button>
+                </div>
+            `).join('');
+
+            // Alert for over budget
+            const overBudget = budgets.filter(b => b.spent > b.limit);
+            document.getElementById('alert-box').innerHTML = overBudget.length > 0 ? `
+                <div class="alert">⚠️ Over Budget: ${overBudget.map(b => b.category).join(', ')}</div>
+            ` : '';
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
